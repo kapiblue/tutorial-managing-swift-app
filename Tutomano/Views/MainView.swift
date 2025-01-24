@@ -12,71 +12,76 @@ import CoreData
 
 struct MainView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    
+    @EnvironmentObject var userSettings: UserSettings
 
     @FetchRequest(
-        entity: Subject.entity(), // fix the exception
-        sortDescriptors: [NSSortDescriptor(keyPath: \Subject.name, ascending: true)],
-        animation: .default)
+        entity: Subject.entity(),
+ // fix the exception
+        sortDescriptors: [NSSortDescriptor(
+            keyPath: \Subject.name,
+            ascending: true
+        )],
+        animation: .default
+    )
     private var items: FetchedResults<Subject>
     @State private var editMode:Bool = false
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        if editMode{
-                            SubjectDetailsView(subject : item)
+        VStack{
+            NavigationView {
+                VStack{
+                    Text(
+                        userSettings.userMode == .student ? "Your subjects" : "Your students"
+                    )
+                    .font(.largeTitle)
+                    List {
+                        ForEach(items) { item in
+                            NavigationLink {
+                                if editMode{
+                                    SubjectDetailsView(subject : item)
+                                }
+                                else {
+                                    SubjectView(subject: item)
+                                }
+                            } label: {
+                                SubjectItemView(
+                                    subject: item,
+                                    editMode: editMode
+                                )
+                            }
                         }
-                        else {
-                            SubjectView(subject: item)
+                        .onDelete(perform: deleteItems)
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button(action: goToEdit) {
+                                Label("Remove", systemImage: "pencil")
+                            }
                         }
-                    } label: {
-                        SubjectItemView(subject: item, editMode: editMode)
+                        ToolbarItem {
+                            NavigationLink {
+                                SubjectDetailsView(subject: nil)
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                        }
+                        ToolbarItem(placement: .topBarLeading) {
+                            NavigationLink{
+                                SettingsView()}
+                            label: {
+                                Image(systemName: "info.circle")
+                            }
+                        }
                     }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: goToEdit) {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink{
-                        SettingsView()}
-                    label: {
-                        Image(systemName: "info.circle")
-                    }
+                    Text("Select an item")
                 }
             }
-            Text("Select an item")
         }
     }
     
     private func goToEdit() {
         editMode.toggle()
-    }
-    private func addItem() {
-        withAnimation {
-            let newItem = Subject(context: viewContext)
-            newItem.name = "name sub"
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
     }
 
     private func deleteItems(offsets: IndexSet) {
@@ -86,8 +91,6 @@ struct MainView: View {
             do {
                 try viewContext.save()
             } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
                 let nsError = error as NSError
                 fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
             }
@@ -95,7 +98,7 @@ struct MainView: View {
     }
 }
 
-#Preview {
-    SubjectsMainView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-}
+//#Preview {
+//    MainView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+//}
 

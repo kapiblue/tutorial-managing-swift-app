@@ -8,11 +8,50 @@
 import SwiftUI
 
 struct DepositView: View {
+    
+    @Environment(\.managedObjectContext) private var viewContext
+    
+    var subject: Subject
+    @State var date: Date = Date.now
+    @State var amount: Float = 0.0
+    @State var comment: String = "Comment"
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        VStack {
+            Text("Make a deposit for \(subject.name!)")
+                .font(.title)
+                .padding()
+            Form {
+                DatePicker(
+                    "Date",
+                    selection: $date,
+                    displayedComponents: .date
+                )
+                TextField("Amount", value: $amount, format: .number)
+                TextEditor(text: $comment)
+            }
+            .navigationTitle("Deposit information")
+            Button("Save", action: saveAction)
+                .font(.headline)
+                .frame(maxWidth:.infinity, alignment: .center)
+        }
     }
-}
-
-#Preview {
-    DepositView()
+    
+    func saveAction()
+    {
+        withAnimation{
+            let deposit = Deposit(context: viewContext)
+            deposit.date = date
+            deposit.amount = amount
+            deposit.comment = comment
+            deposit.subject = subject
+            
+            do {
+                try viewContext.save()
+            } catch {
+                let nsError = error as NSError
+                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            }
+        }
+    }
 }

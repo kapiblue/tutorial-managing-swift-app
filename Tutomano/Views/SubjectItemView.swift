@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct SubjectItemView: View {
+    @ObservedObject var subject: Subject
+    var editMode = false
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        HStack {
+            if editMode {
+                Image(systemName: "pencil").tint(Color.blue)
+            }
+            Text(subject.name ?? "No name")
+        }
     }
-}
-
-#Preview {
-    SubjectItemView()
 }

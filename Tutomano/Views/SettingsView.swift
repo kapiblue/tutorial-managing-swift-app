@@ -8,11 +8,55 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject var userSettings: UserSettings
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        // Header
+        
+        ZStack{
+            RoundedRectangle(cornerRadius: 0)
+                .foregroundColor(Color.blue)
+            VStack{
+                Text("About")
+                    .font(.system(size:50))
+                    .foregroundColor(Color.white)
+                    .bold()
+                    .padding(.bottom, 30)
+                
+                Text("Author: Kacper Dobek")
+                    .font(.system(size: 30))
+                    .foregroundColor(Color.white)
+                VStack {
+                    Text("Set user mode")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding()
+                    
+                    Text(
+                        userSettings.userMode == .student ? "Student" : "Tutor"
+                    )
+                    .font(.largeTitle)
+                    .foregroundStyle(.white)
+                    .padding()
+                            
+                    Button(action: {
+                        toggleUserMode()
+                    }) {
+                        Text("Toggle User Mode")
+                            .padding()
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.white)
+                    .padding()
+                }
+            }
+            .padding(.top, 30)
+            .offset(y: -150)
+        }
+        .frame(width: UIScreen.main.bounds.width * 3)
     }
-}
-
-#Preview {
-    SettingsView()
+    
+    private func toggleUserMode() {
+        userSettings.userMode = userSettings.userMode == .student ? .tutor : .student
+    }
 }

@@ -8,15 +8,44 @@
 
 import SwiftUI
 
-struct SubjectItemView: View {
-    var subject: Subject
-    var editMode = false
+struct LessonItemView: View {
+    // Observe changes to the lesson object
+    @ObservedObject var lesson: Lesson
+    
     var body: some View {
         HStack {
-            if editMode {
-                Image(systemName: "pencil").tint(Color.blue)
+            VStack {
+                Text(lesson.date ?? Date(), formatter: itemFormatter)
+                    .font(.title2)
+                Text(String(format: "%.2f zł", lesson.price))
             }
-            Text(subject.name ?? "No name")
+            Spacer()
+            if lesson.status == "Paid" {
+                Image(systemName: "circle.badge.checkmark")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40, alignment: .topLeading)
+                    .foregroundColor(.green)
+            } else if lesson.status == "New" {
+                Image(systemName: "circle.badge.exclamationmark")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40, alignment: .topLeading)
+                    .foregroundColor(.blue)
+            } else {
+                Image(systemName: "circle.badge.xmark")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40, alignment: .topLeading)
+                    .foregroundColor(.red)
+            }
         }
     }
 }
+
+private let itemFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "dd.MM.yy"
+    return formatter
+}()
+

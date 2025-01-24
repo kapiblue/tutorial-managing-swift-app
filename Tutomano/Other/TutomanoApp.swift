@@ -9,12 +9,13 @@ import SwiftUI
 
 @main
 struct TutomanoApp: App {
-    let persistenceController = PersistenceController.shared
+    let persistenceController = PersistenceController.shared.container
 
     var body: some Scene {
         WindowGroup {
             MainView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(UserSettings(context: persistenceController.viewContext)) // Inject settings into environment
+                .environment(\.managedObjectContext, persistenceController.viewContext)
         }
     }
 }

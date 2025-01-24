@@ -11,6 +11,7 @@ import CoreData
 
 
 struct SubjectDetailsView: View {
+    
     @Environment(\.dismiss) var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     
@@ -24,26 +25,21 @@ struct SubjectDetailsView: View {
     @State private var price: Float = 50
     @State private var archived: Bool = false
     
+    var headerText: String {
+        subject == nil ? "New Subject" : "Edit Subject"
+    }
+    
+    init(subject: Subject?) {
+        _subject = State(initialValue: subject)
+    }
+    
     var body: some View {
         VStack {
-            Text("Subject details").font(.largeTitle).padding().onAppear() {
-                if let c = subject {
-                    print(c.name!)
-                    name = c.name ?? ""
-                    comment = c.comment ?? ""
-                    dayofweek = c.dayofweek ?? ""
-                    time = c.time ?? Date.now
-                    duration = c.duration ?? 60
-                    price = c.price ?? 50
-                    archived = c.archived ?? false
-                } else {
-                    name = ""
-                    comment = ""
-                    dayofweek = ""
-                    time = Date.now
-                    duration = 60
-                    price = 50
-                    archived = false
+            Text(headerText)
+                .font(.largeTitle)
+                .padding()
+                .onAppear {
+                    loadSubjectData()
                 }
             }
             Form {
@@ -77,6 +73,53 @@ struct SubjectDetailsView: View {
                 subject?.archived = archived
                 try! viewContext.save()
                 dismiss()
+            }
+        }
+
+private func loadSubjectData() {
+    guard let subject = subject else {
+        // Initialize for a new subject
+        name = ""
+        comment = "Write your comment here"
+        dayofweek = "Monday"
+        time = Date()
+        duration = 60
+        price = 100
+        archived = false
+        return
+    }
+    
+    // Load data for an existing lesson
+    name = subject.name ?? ""
+    comment = subject.comment ?? ""
+    dayofweek = subject.dayofweek ?? "Monday"
+    time = subject.time ?? Date()
+    duration = subject.duration
+    price = subject.price
+    archived = subject.archived
+}
+    
+    private func saveAction() {
+        withAnimation {
+            let editingSubject = subject ?? Subject(context: viewContext)
+            
+            // Save or update subject data
+            editingSubject.name = name
+            editingSubject.comment = comment
+            editingSubject.dayofweek = dayofweek
+            editingSubject.time = time
+            editingSubject.duration = duration
+            editingSubject.price = price
+            editingSubject.archived = archived
+            
+            do {
+                try viewContext.save()
+                // Assign the saved lesson to the state variable if it is new
+                subject = editingSubject
+                dismiss()
+            } catch {
+                let nsError = error as NSError
+                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
             }
         }
     }
