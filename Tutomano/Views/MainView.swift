@@ -1,51 +1,72 @@
 //
-//  ContentView.swift
+//  ComputerView.swift
 //  Tutomano
 //
 //  Created by Kacper Dobek on 07/01/2025.
 //
 
+
 import SwiftUI
 import CoreData
 
-struct ContentView: View {
+
+struct MainView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
+        entity: Subject.entity(), // fix the exception
+        sortDescriptors: [NSSortDescriptor(keyPath: \Subject.name, ascending: true)],
         animation: .default)
-    private var items: FetchedResults<Item>
+    private var items: FetchedResults<Subject>
+    @State private var editMode:Bool = false
 
     var body: some View {
         NavigationView {
             List {
                 ForEach(items) { item in
                     NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
+                        if editMode{
+                            SubjectDetailsView(subject : item)
+                        }
+                        else {
+                            SubjectView(subject: item)
+                        }
                     } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+                        SubjectItemView(subject: item, editMode: editMode)
                     }
                 }
                 .onDelete(perform: deleteItems)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                    Button(action: goToEdit) {
+                        Label("Edit", systemImage: "pencil")
+                    }
                 }
                 ToolbarItem {
                     Button(action: addItem) {
                         Label("Add Item", systemImage: "plus")
                     }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink{
+                        SettingsView()}
+                    label: {
+                        Image(systemName: "info.circle")
+                    }
+                }
             }
             Text("Select an item")
         }
     }
-
+    
+    private func goToEdit() {
+        editMode.toggle()
+    }
     private func addItem() {
         withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
+            let newItem = Subject(context: viewContext)
+            newItem.name = "name sub"
 
             do {
                 try viewContext.save()
@@ -74,13 +95,7 @@ struct ContentView: View {
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
 #Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    SubjectsMainView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
+
