@@ -59,6 +59,9 @@ struct MainView: View {
                                 Label("Remove", systemImage: "pencil")
                             }
                         }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            EditButton() // Built-in edit button
+                        }
                         ToolbarItem {
                             NavigationLink {
                                 SubjectDetailsView(subject: nil)

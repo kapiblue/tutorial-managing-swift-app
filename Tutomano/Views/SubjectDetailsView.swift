@@ -15,6 +15,8 @@ struct SubjectDetailsView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.managedObjectContext) private var viewContext
     
+    @EnvironmentObject var userSettings: UserSettings
+    
     @State var subject: Subject?
     
     @State private var name: String = ""
@@ -26,7 +28,7 @@ struct SubjectDetailsView: View {
     @State private var archived: Bool = false
     
     var headerText: String {
-        subject == nil ? "New Subject" : "Edit Subject"
+        subject == nil ? userSettings.userMode == .student ? "New subject" : "New student" : userSettings.userMode == .student ? "Edit subject" : "Edit student"
     }
     
     init(subject: Subject?) {
@@ -41,63 +43,74 @@ struct SubjectDetailsView: View {
                 .onAppear {
                     loadSubjectData()
                 }
-            }
-            Form {
-                TextField("Name", text: $name)
-                TextEditor(text: $comment)
-                Picker("Day of week", selection: $dayofweek) {
-                          ForEach(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], id: \.self) { subject in
-                            Text(subject)
-                          }
-                        }
-                DatePicker(
-                    "Date",
-                    selection: $time,
-                    displayedComponents: .hourAndMinute
-                )
-                .datePickerStyle(.compact)
-                TextField("Duration", value: $duration, format: .number)
-                TextField("Price", value: $price, format: .number)
-                Toggle("Archived", isOn: $archived)
-            }
-            Button("Save"){
-                if subject == nil {
-                    subject = Subject(context: viewContext)
-                }
-                subject!.name = name
-                subject!.comment = comment
-                subject!.dayofweek = dayofweek
-                subject!.time = time
-                subject!.duration = duration
-                subject!.price = price
-                subject?.archived = archived
-                try! viewContext.save()
-                dismiss()
-            }
         }
-
-private func loadSubjectData() {
-    guard let subject = subject else {
-        // Initialize for a new subject
-        name = ""
-        comment = "Write your comment here"
-        dayofweek = "Monday"
-        time = Date()
-        duration = 60
-        price = 100
-        archived = false
-        return
+        Form {
+            TextField("Name", text: $name)
+            TextEditor(text: $comment)
+            Picker("Day of week", selection: $dayofweek) {
+                ForEach(
+                    [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                        "Sunday"
+                    ],
+                    id: \.self
+                ) { subject in
+                    Text(subject)
+                }
+            }
+            DatePicker(
+                "Date",
+                selection: $time,
+                displayedComponents: .hourAndMinute
+            )
+            .datePickerStyle(.compact)
+            TextField("Duration", value: $duration, format: .number)
+            TextField("Price", value: $price, format: .number)
+            Toggle("Archived", isOn: $archived)
+        }
+        Button("Save"){
+            if subject == nil {
+                subject = Subject(context: viewContext)
+            }
+            subject!.name = name
+            subject!.comment = comment
+            subject!.dayofweek = dayofweek
+            subject!.time = time
+            subject!.duration = duration
+            subject!.price = price
+            subject?.archived = archived
+            try! viewContext.save()
+            dismiss()
+        }
     }
+
+    private func loadSubjectData() {
+        guard let subject = subject else {
+            // Initialize for a new subject
+            name = ""
+            comment = "Write your comment here"
+            dayofweek = "Monday"
+            time = Date()
+            duration = 60
+            price = 100
+            archived = false
+            return
+        }
     
-    // Load data for an existing lesson
-    name = subject.name ?? ""
-    comment = subject.comment ?? ""
-    dayofweek = subject.dayofweek ?? "Monday"
-    time = subject.time ?? Date()
-    duration = subject.duration
-    price = subject.price
-    archived = subject.archived
-}
+        // Load data for an existing lesson
+        name = subject.name ?? ""
+        comment = subject.comment ?? ""
+        dayofweek = subject.dayofweek ?? "Monday"
+        time = subject.time ?? Date()
+        duration = subject.duration
+        price = subject.price
+        archived = subject.archived
+    }
     
     private func saveAction() {
         withAnimation {

@@ -20,33 +20,88 @@ struct SubjectView: View {
     )
     private var allLessons: FetchedResults<Lesson>
 
+    @FetchRequest(
+        entity: Deposit.entity(),
+        sortDescriptors: [NSSortDescriptor(
+            keyPath: \Deposit.date,
+            ascending: true
+        )],
+        animation: .default
+    )
+    private var allDeposits: FetchedResults<Deposit>
+
     var subject: Subject
     @State private var currentDate = Date.now
     @State private var showAllLessons = false // Toggle to control filtering
 
     var body: some View {
-        // Convert FetchedResults to a regular Swift array
-        // Optionally filter by month
-        let lessons: [Lesson] = allLessons.filter { lesson in
-            lesson.subject == subject && (
-                showAllLessons || isInCurrentMonth(lesson.date)
-            )
+        // Filter lessons and deposits by the current subject
+        let filteredLessons = allLessons.filter { $0.subject == subject }
+        let filteredDeposits = allDeposits.filter { $0.subject == subject }
+
+        // Compute carryover and current month balance
+        let (carryover, currentMonthLessons) = calculateCarryoverAndCurrentLessons(
+            filteredLessons
+        )
+        let currentMonthDeposits = filteredDeposits.filter {
+            isInCurrentMonth($0.date)
+        }
+        let currentBalance = currentMonthLessons.reduce(0) { $0 - $1.price } + currentMonthDeposits.reduce(
+            0
+        ) {
+            $0 + $1.amount
         }
 
         VStack {
             Text("Lessons for \(subject.name!)")
                 .font(.largeTitle)
                 .padding(.top, 20)
-            Text("Carryover: " + String(format: "%.2f zł", subject.price))
-                .font(.title3)
-                .padding()
+
+            // Display carryover sum
+            HStack {
+                Text("Carryover:")
+                Text(String(format: "%.2f", carryover))
+                    .foregroundColor(
+                        carryover < 0 ? .red : (
+                            carryover > 0 ? .green : .primary
+                        )
+                    )
+                Text("PLN")
+            }
+            .padding(5)
 
             // Toggle for showing all lessons
             Toggle("Show All Lessons", isOn: $showAllLessons)
                 .padding()
 
+            List {
+                ForEach(
+                    showAllLessons ? filteredLessons : currentMonthLessons,
+                    id: \.self
+                ) { lesson in
+                    NavigationLink {
+                        LessonDetailsView(lesson: lesson)
+                    } label: {
+                        LessonItemView(lesson: lesson)
+                    }
+                }
+                .onDelete(perform: deleteItems)
+            }
+
+            HStack {
+                Text("Current Balance:")
+                Text(String(format: "%.2f", currentBalance))
+                    .foregroundColor(
+                        currentBalance < 0 ? .red : (
+                            currentBalance > 0 ? .green : .primary
+                        )
+                    )
+                Text("PLN")
+            }
+            .padding(5)
+
+            // Month navigation
             if !showAllLessons {
-                // Month navigation only applies when filtering
                 HStack {
                     Button {
                         currentDate = Calendar.current
@@ -58,7 +113,7 @@ struct SubjectView: View {
                             .background(.thinMaterial)
                             .clipShape(Circle())
                     }
-                    Text(get_month_year(date: currentDate))
+                    Text(getMonthYear(date: currentDate))
                     Button {
                         currentDate = Calendar.current
                             .date(byAdding: .month, value: 1, to: currentDate)!
@@ -70,17 +125,7 @@ struct SubjectView: View {
                             .clipShape(Circle())
                     }
                 }
-            }
-
-            List {
-                ForEach(lessons, id: \.self) { item in
-                    NavigationLink {
-                        LessonDetailsView(lesson: item)
-                    } label: {
-                        LessonItemView(lesson: item)
-                    }
-                }
-                .onDelete(perform: deleteItems)
+                .padding(.bottom, 10)
             }
         }
         .toolbar {
@@ -104,6 +149,27 @@ struct SubjectView: View {
         }
     }
 
+    // Helper to filter by current month and calculate carryover
+    private func calculateCarryoverAndCurrentLessons(_ lessons: [Lesson]) -> (
+        carryover: Float,
+        currentMonthLessons: [Lesson]
+    ) {
+        var carryover: Float = 0
+        var currentMonthLessons: [Lesson] = []
+        let calendar = Calendar.current
+
+        for lesson in lessons {
+            guard let lessonDate = lesson.date else { continue }
+            if isInCurrentMonth(lessonDate) {
+                currentMonthLessons.append(lesson)
+            } else if lessonDate < calendar.startOfDay(for: currentDate) {
+                carryover -= lesson.price
+            }
+        }
+
+        return (carryover, currentMonthLessons)
+    }
+
     private func isInCurrentMonth(_ date: Date?) -> Bool {
         guard let date = date else { return false }
         let calendar = Calendar.current
@@ -113,14 +179,11 @@ struct SubjectView: View {
         let currentYear = calendar.component(.year, from: currentDate)
         return month == currentMonth && year == currentYear
     }
-    
-    private func get_month_year(date: Date) -> String {
+
+    private func getMonthYear(date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy"
-        let year = formatter.string(from: date)
-        formatter.dateFormat = "MMM"
-        let month = formatter.string(from: date)
-        return month + " " +  year
+        formatter.dateFormat = "MMM yyyy"
+        return formatter.string(from: date)
     }
 
     private func deleteItems(offsets: IndexSet) {
