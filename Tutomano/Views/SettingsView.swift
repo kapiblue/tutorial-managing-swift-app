@@ -10,7 +10,6 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var userSettings: UserSettings
     var body: some View {
-        // Header
         
         ZStack{
             RoundedRectangle(cornerRadius: 0)
@@ -30,7 +29,7 @@ struct SettingsView: View {
                         .font(.headline)
                         .foregroundStyle(.white)
                         .padding()
-                    
+                    // Set the text according to the mode
                     Text(
                         userSettings.userMode == .student ? "Student" : "Tutor"
                     )

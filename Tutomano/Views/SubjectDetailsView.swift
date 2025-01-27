@@ -28,7 +28,8 @@ struct SubjectDetailsView: View {
     @State private var archived: Bool = false
     
     var headerText: String {
-        subject == nil ? userSettings.userMode == .student ? "New subject" : "New student" : userSettings.userMode == .student ? "Edit subject" : "Edit student"
+        subject == nil ? userSettings.userMode == .student ? "New subject" : "New student" :
+        userSettings.userMode == .student ? "Edit subject" : "Edit student"
     }
     
     init(subject: Subject?) {
@@ -127,7 +128,7 @@ struct SubjectDetailsView: View {
             
             do {
                 try viewContext.save()
-                // Assign the saved lesson to the state variable if it is new
+                // Assign the saved subject to the state variable if it is new
                 subject = editingSubject
                 dismiss()
             } catch {

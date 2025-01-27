@@ -22,6 +22,7 @@ extension Subject {
 import SwiftUI
 
 struct SubjectItemView: View {
+    @EnvironmentObject var userSettings: UserSettings
     @ObservedObject var subject: Subject
     var editMode = false
 
@@ -52,6 +53,8 @@ struct SubjectItemView: View {
     private func calculateTotalBalance() -> Float {
         let lessonsBalance = subject.lessonsArray.reduce(0) { $0 - $1.price }
         let depositsBalance = subject.depositsArray.reduce(0) { $0 + $1.amount }
-        return lessonsBalance + depositsBalance
+        var totalBalance = lessonsBalance + depositsBalance
+        totalBalance = userSettings.userMode == .student ? totalBalance : -1 * totalBalance
+        return totalBalance
     }
 }

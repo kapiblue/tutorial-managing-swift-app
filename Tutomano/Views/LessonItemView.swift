@@ -17,7 +17,7 @@ struct LessonItemView: View {
             VStack {
                 Text(lesson.date ?? Date(), formatter: itemFormatter)
                     .font(.title2)
-                Text(String(format: "%.2f zł", lesson.price))
+                Text(String(format: "%.2f PLN", lesson.price))
             }
             Spacer()
             if lesson.status == "Paid" {

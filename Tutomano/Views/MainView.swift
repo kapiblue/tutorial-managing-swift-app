@@ -17,15 +17,17 @@ struct MainView: View {
 
     @FetchRequest(
         entity: Subject.entity(),
- // fix the exception
         sortDescriptors: [NSSortDescriptor(
             keyPath: \Subject.name,
             ascending: true
         )],
         animation: .default
     )
-    private var items: FetchedResults<Subject>
+    private var allSubjects: FetchedResults<Subject>
+    
     @State private var editMode:Bool = false
+    @State private var showArchived = false
+    @State private var filteredSubjects: [Subject] = []
 
     var body: some View {
         VStack{
@@ -36,7 +38,8 @@ struct MainView: View {
                     )
                     .font(.largeTitle)
                     List {
-                        ForEach(items) { item in
+                        ForEach(filteredSubjects,
+                                id: \.self) { item in
                             NavigationLink {
                                 if editMode{
                                     SubjectDetailsView(subject : item)
@@ -77,22 +80,41 @@ struct MainView: View {
                             }
                         }
                     }
-                    Text("Select an item")
+                    Toggle("Show archived", isOn: $showArchived)
+                        .onChange(of: showArchived) {
+                            updateFilteredSubjects()
+                        }
+                        .padding()
                 }
             }
         }
+        .onAppear {
+                    updateFilteredSubjects()
+                }
+        // Update the list when a new subject is added
+        .onReceive(allSubjects.publisher) { _ in
+                    updateFilteredSubjects()
+                }
     }
     
     private func goToEdit() {
         editMode.toggle()
     }
+    
+    private func updateFilteredSubjects() {
+        filteredSubjects = allSubjects
+            .filter { subject in  showArchived ? subject.archived : !subject.archived
+            }
+    }
 
     private func deleteItems(offsets: IndexSet) {
         withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
+            let subjectsToDelete = offsets.map { filteredSubjects[$0] }
+            subjectsToDelete.forEach(viewContext.delete)
 
             do {
                 try viewContext.save()
+                updateFilteredSubjects()
             } catch {
                 let nsError = error as NSError
                 fatalError("Unresolved error \(nsError), \(nsError.userInfo)")

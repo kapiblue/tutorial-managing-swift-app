@@ -14,8 +14,13 @@ struct TutomanoApp: App {
     var body: some Scene {
         WindowGroup {
             MainView()
-                .environmentObject(UserSettings(context: persistenceController.viewContext)) // Inject settings into environment
-                .environment(\.managedObjectContext, persistenceController.viewContext)
+                .environmentObject(
+                    UserSettings(context: persistenceController.viewContext)
+                ) // Inject settings into environment
+                .environment(
+                    \.managedObjectContext,
+                     persistenceController.viewContext
+                )
         }
     }
 }
